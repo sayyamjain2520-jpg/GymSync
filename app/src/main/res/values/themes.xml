@@ -1,0 +1,45 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme: Clean Light theme for college project -->
+    <style name="Base.Theme.GymSync" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/purple_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/purple_light</item>
+        <item name="colorOnPrimaryContainer">@color/purple_primary</item>
+
+        <item name="colorSecondary">@color/purple_primary</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="android:windowBackground">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:statusBarColor">@color/purple_primary</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
+    <style name="Theme.GymSync" parent="Base.Theme.GymSync" />
+
+    <!-- Simple Button Styles -->
+    <style name="GymSyncButton.Primary" parent="Widget.Material3.Button">
+        <item name="android:backgroundTint">@color/purple_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">6dp</item>
+    </style>
+
+    <style name="GymSyncButton.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/purple_primary</item>
+        <item name="strokeColor">@color/purple_primary</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cornerRadius">6dp</item>
+    </style>
+
+    <style name="GymSyncButton.Secondary" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:backgroundTint">@color/surface_card_elevated</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="cornerRadius">6dp</item>
+    </style>
+</resources>

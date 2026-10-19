@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Primary (Clean College Purple) -->
+    <color name="purple_primary">#6200EE</color>
+    <color name="purple_primary_variant">#3700B3</color>
+    <color name="purple_light">#EDE7F6</color>
+    <color name="purple_text">#FFFFFF</color>
+
+    <!-- Backward compatibility mappings -->
+    <color name="lime_primary">#6200EE</color>
+    <color name="lime_primary_variant">#3700B3</color>
+    <color name="lime_glow">#1A6200EE</color>
+    <color name="lime_subtle">#0D6200EE</color>
+    <color name="lime_text">#FFFFFF</color>
+
+    <!-- Surfaces & Backgrounds (Simple White & Clean Light Grays) -->
+    <color name="bg_dark">#FFFFFF</color>
+    <color name="surface_dark">#FFFFFF</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_card_elevated">#F8F9FA</color>
+    <color name="surface_card_highlight">#EDE7F6</color>
+
+    <!-- Text Colors (Black & Dark Grey) -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_tertiary">#888888</color>
+    <color name="text_disabled">#AAAAAA</color>
+
+    <!-- Borders & Dividers -->
+    <color name="border_subtle">#E0E0E0</color>
+    <color name="border_focus">#6200EE</color>
+    <color name="divider">#EEEEEE</color>
+
+    <!-- Status & Semantic Colors (Subtle, standard) -->
+    <color name="status_green">#2E7D32</color>
+    <color name="status_green_bg">#E8F5E9</color>
+    <color name="status_yellow">#F57F17</color>
+    <color name="status_yellow_bg">#FFF8E1</color>
+    <color name="status_red">#C62828</color>
+    <color name="status_red_bg">#FFEBEE</color>
+    <color name="status_blue">#6200EE</color>
+    <color name="status_blue_bg">#EDE7F6</color>
+
+    <!-- Standard Basics -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
+</resources>

@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Center GymSync Emblem -->
+    <path
+        android:fillColor="#33CCFF00"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+    <path
+        android:strokeColor="#CCFF00"
+        android:strokeWidth="2.5"
+        android:pathData="M54,54m-26,0a26,26 0,1 1,52 0a26,26 0,1 1,-52 0" />
+    <!-- Barbell Shaft -->
+    <path
+        android:fillColor="#CCFF00"
+        android:pathData="M44,52h20v4H44z" />
+    <!-- Inner Plates -->
+    <path
+        android:fillColor="#CCFF00"
+        android:pathData="M40,43h4v22h-4z" />
+    <path
+        android:fillColor="#B5E600"
+        android:pathData="M34,47h4v14h-4z" />
+    <!-- Outer Plates -->
+    <path
+        android:fillColor="#CCFF00"
+        android:pathData="M64,43h4v22h-4z" />
+    <path
+        android:fillColor="#B5E600"
+        android:pathData="M70,47h4v14h-4z" />
+</vector>
