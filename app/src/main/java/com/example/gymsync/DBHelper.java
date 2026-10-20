@@ -295,10 +295,6 @@ public class DBHelper extends SQLiteOpenHelper {
         db.insertWithOnConflict("gym_occupancy", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
-    // ==========================================
-    // USER AUTHENTICATION & PROFILE METHODS
-    // ==========================================
-
     public static String hashPassword(String password) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -405,9 +401,6 @@ public class DBHelper extends SQLiteOpenHelper {
         return rows > 0;
     }
 
-    // ==========================================
-    // WORKOUT PLANNER METHODS
-    // ==========================================
 
     public Cursor getWorkoutPlans(String userEmail) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -502,10 +495,6 @@ public class DBHelper extends SQLiteOpenHelper {
         return count;
     }
 
-    // ==========================================
-    // GYM VISIT BOOKINGS
-    // ==========================================
-
     public boolean insertGymBooking(String email, String gymName, String gymAddress, String visitDate, String visitTime, String contact, String notes) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -541,9 +530,6 @@ public class DBHelper extends SQLiteOpenHelper {
         return count;
     }
 
-    // ==========================================
-    // SUBSCRIPTIONS
-    // ==========================================
 
     public boolean saveSubscription(String email, String planName, String price, String cycle) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -573,9 +559,6 @@ public class DBHelper extends SQLiteOpenHelper {
         return plan;
     }
 
-    // ==========================================
-    // OCCUPANCY
-    // ==========================================
 
     public Cursor getGymOccupancy(String gymName) {
         SQLiteDatabase db = this.getReadableDatabase();

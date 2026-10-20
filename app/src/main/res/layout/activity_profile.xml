@@ -19,7 +19,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Top Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,7 +73,6 @@
                     android:contentDescription="Edit Profile" />
             </LinearLayout>
 
-            <!-- User Avatar & Bio Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -114,7 +112,6 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Health Metrics Overview -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -124,7 +121,6 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <!-- Row 1: Age, Height, Weight -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -218,7 +214,6 @@
 
             </LinearLayout>
 
-            <!-- BMI & Wellness Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -273,7 +268,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Membership & Lifetime Activity -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -344,7 +338,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Edit Button Action -->
             <Button
                 android:id="@+id/btEditProfileBig"
                 android:layout_width="match_parent"

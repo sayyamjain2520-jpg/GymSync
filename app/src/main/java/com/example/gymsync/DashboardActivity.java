@@ -108,7 +108,6 @@ public class DashboardActivity extends AppCompatActivity {
             return;
         }
 
-        // Load user name and BMI
         Cursor cursor = dbHelper.getUserDetails(userEmail);
         if (cursor != null && cursor.moveToFirst()) {
             String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
@@ -119,7 +118,6 @@ public class DashboardActivity extends AppCompatActivity {
                 tvGreetingName.setText("Hello, " + name + "!");
             }
 
-            // Calculate BMI: weight (kg) / [height (m)]^2
             if (height > 0 && weight > 0) {
                 double heightM = height / 100.0;
                 double bmi = weight / (heightM * heightM);
@@ -141,13 +139,11 @@ public class DashboardActivity extends AppCompatActivity {
             cursor.close();
         }
 
-        // Load workout counts
         int workoutsLogged = dbHelper.getTotalCompletedCount(userEmail);
         if (tvStatWorkouts != null) {
             tvStatWorkouts.setText(String.valueOf(workoutsLogged));
         }
 
-        // Load gym visit bookings
         int visitsCount = dbHelper.getUserBookingsCount(userEmail);
         if (tvStatVisits != null) {
             tvStatVisits.setText(String.valueOf(visitsCount));

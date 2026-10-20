@@ -89,30 +89,51 @@ public class WorkoutActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        btBack.setOnClickListener(v -> finish());
 
-        btAddCustomPlan.setOnClickListener(v -> showCreatePlanDialog());
-
-        btAddExercise.setOnClickListener(v -> {
-            if (currentPlan != null) {
-                showAddExerciseDialog(currentPlan.getId());
-            } else {
-                Toast.makeText(WorkoutActivity.this, "Please select a plan first", Toast.LENGTH_SHORT).show();
+        btBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
             }
         });
 
-        btDeletePlan.setOnClickListener(v -> {
-            if (currentPlan != null && !currentPlan.isStarter()) {
-                showDeletePlanDialog(currentPlan);
+        btAddCustomPlan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showCreatePlanDialog();
             }
         });
 
-        btGenerate.setOnClickListener(v -> {
-            if (currentPlan != null) {
-                Toast.makeText(WorkoutActivity.this, "Refreshing checklist for: " + currentPlan.getPlanName(), Toast.LENGTH_SHORT).show();
-                loadExercisesForPlan(currentPlan.getId());
+        btAddExercise.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (currentPlan!=null){
+                    showAddExerciseDialog(currentPlan.getId());
+                } else {
+                    Toast.makeText(WorkoutActivity.this, "Please select a plan first", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+
+        btDeletePlan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (currentPlan != null && !currentPlan.isStarter()) {
+                    showDeletePlanDialog(currentPlan);
+                }
+            }
+        });
+
+        btGenerate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (currentPlan != null) {
+                    Toast.makeText(WorkoutActivity.this, "Refreshing checklist for: " + currentPlan.getPlanName(), Toast.LENGTH_SHORT).show();
+                    loadExercisesForPlan(currentPlan.getId());
+                }
+            }
+        });
+
 
         spPlanSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -240,7 +261,6 @@ public class WorkoutActivity extends AppCompatActivity {
         int todayCompleted = dbHelper.getTodayCompletedCount(userEmail);
         tvCompletedCountBadge.setText(todayCompleted + " Done Today");
 
-        // Progress bar out of 10 daily target
         int progressPct = Math.min(100, todayCompleted * 15);
         pbWorkoutProgress.setProgress(progressPct);
     }

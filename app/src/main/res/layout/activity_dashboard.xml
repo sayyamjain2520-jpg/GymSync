@@ -15,7 +15,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top Header: Greeting, App Mark & Logout -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -61,7 +60,6 @@
                 android:contentDescription="Logout" />
         </LinearLayout>
 
-        <!-- Athlete Stats Summary Card -->
         <LinearLayout
             android:id="@+id/cardStats"
             android:layout_width="match_parent"
@@ -80,14 +78,13 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
-            <!-- Metrics Row (Workouts Completed, BMI, Visits) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:orientation="horizontal">
 
-                <!-- Stat 1: Workouts Logged -->
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -115,7 +112,6 @@
                         android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- Stat 2: BMI -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -146,7 +142,6 @@
                         android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- Stat 3: Gym Bookings -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -176,7 +171,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Section Header: Modules -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -186,7 +180,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="10dp" />
 
-        <!-- Card 1: FIND NEARBY GYMS -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -224,7 +217,6 @@
                 app:backgroundTint="@null" />
         </LinearLayout>
 
-        <!-- Card 2: WORKOUT PLANNER -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -262,7 +254,6 @@
                 app:backgroundTint="@null" />
         </LinearLayout>
 
-        <!-- Card 3: MY PROFILE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

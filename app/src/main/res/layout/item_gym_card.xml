@@ -26,6 +26,7 @@
             android:textStyle="bold" />
 
         <LinearLayout
+            android:id="@+id/llCardGymRating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_badge_yellow"

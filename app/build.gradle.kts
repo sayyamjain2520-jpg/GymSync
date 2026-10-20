@@ -1,5 +1,20 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
+val mapsApiKey: String = run {
+    val envKey = System.getenv("MAPS_API_KEY")
+    if (!envKey.isNullOrBlank()) envKey
+    else localProperties.getProperty("MAPS_API_KEY") ?: ""
 }
 
 android {
@@ -18,6 +33,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        resValue("string", "google_maps_key", mapsApiKey)
+        buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
+        resValues = true
     }
 
     buildTypes {

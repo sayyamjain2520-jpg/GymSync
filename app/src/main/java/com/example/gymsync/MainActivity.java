@@ -23,7 +23,6 @@ public class MainActivity extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
 
-        // Auto-login if session exists
         if (sessionManager.isLoggedIn()) {
             Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
             intent.putExtra("user_email", sessionManager.getUserEmail());

@@ -19,7 +19,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Top Header with Back button -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -58,7 +57,6 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Gym Main Header Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -113,7 +111,6 @@
                         android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- Quick Action Buttons: Directions & Call -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -148,7 +145,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Timings Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -175,7 +171,6 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Facilities Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -202,7 +197,6 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Booking Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -232,7 +226,6 @@
                 android:textStyle="bold"
                 app:backgroundTint="@null" />
 
-            <!-- Existing Bookings for this gym / user -->
             <TextView
                 android:id="@+id/tvExistingBookingsTitle"
                 android:layout_width="wrap_content"

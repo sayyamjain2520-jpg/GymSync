@@ -4,12 +4,15 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -44,16 +47,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
+    private static final LatLng SHIRPUR_CENTER = new LatLng(21.3574, 74.8833); // Shirpur, Maharashtra
 
     private GoogleMap mMap;
     private PlacesClient placesClient;
-    private LatLng userLocation;
-    private final LatLng fallbackCenter = new LatLng(21.3500, 74.8800); // Shirpur regional center
+    private LatLng userLocation = null;
+    private LatLng activeSearchLocation = SHIRPUR_CENTER;
+    private String currentSearchLabel = "Shirpur, Maharashtra";
 
     private ImageButton btBack, btRefreshMap;
     private EditText etGymSearch;
@@ -64,6 +72,7 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
 
     private final List<GymModel> currentGyms = new ArrayList<>();
     private final Map<Marker, GymModel> markerGymMap = new HashMap<>();
+    private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +92,12 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
         });
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        backgroundExecutor.shutdown();
+    }
+
     private void initViews() {
         btBack = findViewById(R.id.btBack);
         btRefreshMap = findViewById(R.id.btRefreshMap);
@@ -97,43 +112,97 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
         llEmptyGyms = findViewById(R.id.llEmptyGyms);
         pbLoadingGyms = findViewById(R.id.pbLoadingGyms);
 
-        btBack.setOnClickListener(v -> finish());
+        btBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
 
-        btRefreshMap.setOnClickListener(v -> {
-            detectCurrentLocation();
-            performGymSearch(getSearchQuery());
+        btRefreshMap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                detectCurrentLocation();
+                etGymSearch.setText("");
+                currentSearchLabel = (userLocation != null) ? "Current GPS Location" : "Shirpur, Maharashtra";
+                performSearch(currentSearchLabel);
+            }
         });
 
         btSearchSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                performGymSearch(getSearchQuery());
+                hideKeyboard();
+                performSearch(etGymSearch.getText().toString().trim());
             }
         });
 
+
         etGymSearch.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                performGymSearch(getSearchQuery());
+                hideKeyboard();
+                performSearch(etGymSearch.getText().toString().trim());
                 return true;
             }
             return false;
         });
     }
 
-    private String getSearchQuery() {
-        String query = etGymSearch.getText().toString().trim();
-        return query.isEmpty() ? "gym" : query;
+    private void hideKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
+    }
+
+    private String getResolvedApiKey() {
+        String key = BuildConfig.MAPS_API_KEY;
+        if (key != null && !key.trim().isEmpty() && !key.contains("YOUR_GOOGLE_MAPS_KEY")) {
+            return key.trim();
+        }
+
+        try {
+            key = getString(R.string.google_maps_key);
+            if (key != null && !key.trim().isEmpty() && !key.contains("YOUR_GOOGLE_MAPS_KEY")) {
+                return key.trim();
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            android.content.pm.ApplicationInfo ai = getPackageManager()
+                    .getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
+            if (ai != null && ai.metaData != null) {
+                key = ai.metaData.getString("com.google.android.geo.API_KEY");
+                if (key != null && !key.trim().isEmpty() && !key.contains("YOUR_GOOGLE_MAPS_KEY")) {
+                    return key.trim();
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return "";
     }
 
     private void initPlacesClient() {
         try {
+            String apiKey = getResolvedApiKey();
+            if (apiKey.isEmpty()) {
+                tvModeTitle.setText("Places API Key Missing");
+                tvModeSubtitle.setText("No API key configured in local.properties. Active Fallback Mode.");
+                placesClient = null;
+                return;
+            }
+
             if (!Places.isInitialized()) {
-                String apiKey = getString(R.string.google_maps_key);
                 Places.initializeWithNewPlacesApiEnabled(getApplicationContext(), apiKey);
             }
             placesClient = Places.createClient(this);
         } catch (Exception e) {
-            tvModeSubtitle.setText("Places SDK: " + e.getMessage());
+            tvModeTitle.setText("Places SDK Offline");
+            tvModeSubtitle.setText("Init error: " + e.getMessage() + ". Active Fallback Mode.");
+            placesClient = null;
         }
     }
 
@@ -173,11 +242,19 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
                     } catch (SecurityException ignored) {}
                 }
             } else {
-                tvLocationStatus.setText("GPS Permission denied (Using regional center)");
-                userLocation = fallbackCenter;
-                performGymSearch(getSearchQuery());
+                tvLocationStatus.setText("GPS Permission denied. Type a location above to search.");
+                activeSearchLocation = SHIRPUR_CENTER;
+                currentSearchLabel = "Shirpur, Maharashtra";
+                if (mMap != null) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(activeSearchLocation, 14f));
+                }
             }
+            performSearch(currentSearchLabel);
         }
+    }
+
+    private boolean isEmulatorDefaultLocation(double lat, double lng) {
+        return Math.abs(lat - 37.4220) < 0.05 && Math.abs(lng - (-122.0840)) < 0.05;
     }
 
     private void detectCurrentLocation() {
@@ -201,15 +278,31 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
             }
 
             if (bestLocation != null) {
-                userLocation = new LatLng(bestLocation.getLatitude(), bestLocation.getLongitude());
-                tvLocationStatus.setText(String.format("GPS Locked: %.4f, %.4f", userLocation.latitude, userLocation.longitude));
+                double lat = bestLocation.getLatitude();
+                double lng = bestLocation.getLongitude();
+
+                if (isEmulatorDefaultLocation(lat, lng)) {
+                    userLocation = null;
+                    activeSearchLocation = SHIRPUR_CENTER;
+                    currentSearchLabel = "Shirpur, Maharashtra";
+                    tvLocationStatus.setText("Emulator GPS detected (Mountain View). Centered on Shirpur hub.");
+                } else {
+                    userLocation = new LatLng(lat, lng);
+                    activeSearchLocation = userLocation;
+                    currentSearchLabel = String.format(Locale.getDefault(), "GPS: %.4f, %.4f", lat, lng);
+                    tvLocationStatus.setText(String.format(Locale.getDefault(), "GPS Locked: %.4f, %.4f", lat, lng));
+                }
             } else {
-                userLocation = fallbackCenter;
-                tvLocationStatus.setText("GPS Initializing... (Centered on Regional Hub)");
+                userLocation = null;
+                activeSearchLocation = SHIRPUR_CENTER;
+                currentSearchLabel = "Shirpur, Maharashtra";
+                tvLocationStatus.setText("GPS unavailable. Centered on Shirpur, Maharashtra");
             }
         } catch (Exception e) {
-            userLocation = fallbackCenter;
-            tvLocationStatus.setText("Regional Hub Fallback");
+            userLocation = null;
+            activeSearchLocation = SHIRPUR_CENTER;
+            currentSearchLabel = "Shirpur, Maharashtra";
+            tvLocationStatus.setText("Regional Hub: Shirpur, Maharashtra");
         }
     }
 
@@ -221,11 +314,12 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mMap.setMyLocationEnabled(true);
+            try {
+                mMap.setMyLocationEnabled(true);
+            } catch (SecurityException ignored) {}
         }
 
-        LatLng center = (userLocation != null) ? userLocation : fallbackCenter;
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 14f));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(activeSearchLocation, 14f));
 
         mMap.setOnMarkerClickListener(marker -> {
             GymModel gym = markerGymMap.get(marker);
@@ -235,16 +329,93 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
             return false;
         });
 
-        performGymSearch(getSearchQuery());
+        performSearch(currentSearchLabel);
     }
 
-    private void performGymSearch(String query) {
-        LatLng searchLocation = (userLocation != null) ? userLocation : fallbackCenter;
+    private void performSearch(String rawQuery) {
+        final String query = (rawQuery == null || rawQuery.trim().isEmpty()) ? "Shirpur" : rawQuery.trim();
 
         showLoading(true);
+
+        backgroundExecutor.execute(() -> {
+            LatLng geocodedCoords = null;
+            String geocodedName = null;
+
+            String locationCandidate = query.replaceAll("(?i)\\b(gyms?|fitness|center|club|studios?|near me|nearby|in|at)\\b", "").trim();
+            if (locationCandidate.isEmpty()) {
+                locationCandidate = query;
+            }
+
+            try {
+                if (Geocoder.isPresent()) {
+                    Geocoder geocoder = new Geocoder(NearbyGymsActivity.this, Locale.getDefault());
+                    List<Address> addresses = geocoder.getFromLocationName(locationCandidate, 3);
+                    if (addresses != null && !addresses.isEmpty()) {
+                        Address addr = addresses.get(0);
+                        geocodedCoords = new LatLng(addr.getLatitude(), addr.getLongitude());
+                        if (addr.getLocality() != null) {
+                            geocodedName = addr.getLocality() + (addr.getAdminArea() != null ? ", " + addr.getAdminArea() : "");
+                        } else if (addr.getSubAdminArea() != null) {
+                            geocodedName = addr.getSubAdminArea() + (addr.getAdminArea() != null ? ", " + addr.getAdminArea() : "");
+                        } else {
+                            geocodedName = addr.getAddressLine(0);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            if (geocodedCoords == null) {
+                String candidateLower = locationCandidate.toLowerCase(Locale.ROOT);
+                if (candidateLower.contains("shirpur")) {
+                    geocodedCoords = SHIRPUR_CENTER;
+                    geocodedName = "Shirpur, Maharashtra";
+                } else if (candidateLower.contains("dhule")) {
+                    geocodedCoords = new LatLng(20.9042, 74.7749);
+                    geocodedName = "Dhule, Maharashtra";
+                } else if (candidateLower.contains("jalgaon")) {
+                    geocodedCoords = new LatLng(21.0077, 75.5626);
+                    geocodedName = "Jalgaon, Maharashtra";
+                } else if (candidateLower.contains("nashik") || candidateLower.contains("nasik")) {
+                    geocodedCoords = new LatLng(19.9975, 73.7898);
+                    geocodedName = "Nashik, Maharashtra";
+                } else if (candidateLower.contains("pune")) {
+                    geocodedCoords = new LatLng(18.5204, 73.8567);
+                    geocodedName = "Pune, Maharashtra";
+                } else if (candidateLower.contains("mumbai")) {
+                    geocodedCoords = new LatLng(19.0760, 72.8777);
+                    geocodedName = "Mumbai, Maharashtra";
+                }
+            }
+
+            final LatLng targetLocation = (geocodedCoords != null) ? geocodedCoords : activeSearchLocation;
+            final String targetLabel = (geocodedName != null) ? geocodedName : query;
+            final boolean locationResolved = (geocodedCoords != null);
+
+            runOnUiThread(() -> {
+                if (locationResolved) {
+                    activeSearchLocation = targetLocation;
+                    currentSearchLabel = targetLabel;
+                    tvLocationStatus.setText("Location: " + targetLabel);
+                    if (mMap != null) {
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(activeSearchLocation, 14f));
+                    }
+                }
+
+                executePlacesGymSearch(activeSearchLocation, query);
+            });
+        });
+    }
+
+    private void executePlacesGymSearch(LatLng searchLocation, String searchQuery) {
         markerGymMap.clear();
         if (mMap != null) {
             mMap.clear();
+        }
+
+        if (placesClient == null) {
+            showLoading(false);
+            loadFallbackGyms("Places API offline (API key not configured in local.properties). Active Fallback Mode.", searchLocation);
+            return;
         }
 
         List<Place.Field> placeFields = Arrays.asList(
@@ -253,18 +424,17 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
                 Place.Field.ADDRESS,
                 Place.Field.LAT_LNG,
                 Place.Field.RATING,
-                Place.Field.USER_RATINGS_TOTAL
+                Place.Field.USER_RATINGS_TOTAL,
+                Place.Field.PHONE_NUMBER,
+                Place.Field.WEBSITE_URI
         );
 
-        SearchByTextRequest request = SearchByTextRequest.builder(query + " gym fitness", placeFields)
+        String textQuery = searchQuery.toLowerCase(Locale.ROOT).contains("gym") ? searchQuery : searchQuery + " gym";
+
+        SearchByTextRequest request = SearchByTextRequest.builder(textQuery, placeFields)
                 .setMaxResultCount(12)
                 .setLocationBias(CircularBounds.newInstance(searchLocation, 6000.0))
                 .build();
-
-        if (placesClient == null) {
-            loadFallbackGyms("Places SDK uninitialized. Displaying verified local gym directory.");
-            return;
-        }
 
         placesClient.searchByText(request)
                 .addOnSuccessListener(response -> {
@@ -272,23 +442,31 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
                     List<Place> places = response.getPlaces();
 
                     if (places == null || places.isEmpty()) {
-                        loadFallbackGyms("No Places API results found for '" + query + "'. Showing verified regional gyms.");
+                        currentGyms.clear();
+                        renderGymCardsAndMarkers();
+                        tvModeTitle.setText("Google Places API (0 Results)");
+                        tvModeSubtitle.setText("No gyms found for '" + searchQuery + "'. Try another keyword or location.");
+                        llEmptyGyms.setVisibility(View.VISIBLE);
                         return;
                     }
 
                     tvModeTitle.setText("Google Places API (Live Results)");
-                    tvModeSubtitle.setText("Found " + places.size() + " active gym listings near your coordinates.");
+                    tvModeSubtitle.setText("Found " + places.size() + " active gym listings near " + currentSearchLabel + ".");
+                    llEmptyGyms.setVisibility(View.GONE);
 
                     currentGyms.clear();
                     for (Place place : places) {
                         double lat = (place.getLatLng() != null) ? place.getLatLng().latitude : searchLocation.latitude;
                         double lng = (place.getLatLng() != null) ? place.getLatLng().longitude : searchLocation.longitude;
                         float dist = calculateDistanceKm(searchLocation.latitude, searchLocation.longitude, lat, lng);
-                        double rating = (place.getRating() != null) ? place.getRating() : 4.5;
-                        int totalRatings = (place.getUserRatingsTotal() != null) ? place.getUserRatingsTotal() : 25;
+
+                        double rating = (place.getRating() != null) ? place.getRating() : -1.0;
+                        int totalRatings = (place.getUserRatingsTotal() != null) ? place.getUserRatingsTotal() : 0;
+                        String phone = (place.getPhoneNumber() != null) ? place.getPhoneNumber() : "";
+                        String website = (place.getWebsiteUri() != null) ? place.getWebsiteUri().toString() : "";
 
                         GymModel model = new GymModel(
-                                place.getId(),
+                                place.getId() != null ? place.getId() : "",
                                 place.getName() != null ? place.getName() : "Local Fitness Center",
                                 place.getAddress() != null ? place.getAddress() : "Nearby Gym Address",
                                 lat,
@@ -296,9 +474,9 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
                                 dist,
                                 rating,
                                 totalRatings,
-                                "Open Now",
-                                "+91 98230 11223",
-                                "https://gymsync.fitness",
+                                "Open",
+                                phone,
+                                website,
                                 true
                         );
                         currentGyms.add(model);
@@ -309,39 +487,34 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
                 .addOnFailureListener(exception -> {
                     showLoading(false);
                     String errorMsg = exception.getMessage() != null ? exception.getMessage() : "API call failed";
-                    loadFallbackGyms("Places API offline (" + errorMsg + "). Active Fallback Mode.");
+                    loadFallbackGyms("Places API offline (" + errorMsg + "). Active Fallback Mode.", searchLocation);
                 });
     }
 
-    private void loadFallbackGyms(String reasonMessage) {
-        tvModeTitle.setText("Verified Local Gym Directory (Fallback)");
+    private void loadFallbackGyms(String reasonMessage, LatLng baseLocation) {
+        tvModeTitle.setText("Verified Local Directory (Fallback Mode)");
         tvModeSubtitle.setText(reasonMessage);
 
         currentGyms.clear();
-        LatLng base = (userLocation != null) ? userLocation : fallbackCenter;
+        LatLng base = (baseLocation != null) ? baseLocation : SHIRPUR_CENTER;
 
-        // Curated real-world regional gym dataset with realistic offsets
-        currentGyms.add(new GymModel("fb_1", "Iron Paradise Fitness", "Main Road, Station Area",
-                base.latitude + 0.0075, base.longitude + 0.0045,
-                0, 4.8, 128, "Open • Closes 10 PM", "+91 98221 44556", "https://ironparadise.gym", false));
+        // Curated regional sample gyms placed realistically around the active searched location
+        currentGyms.add(new GymModel("fb_1", "Iron Paradise Fitness [Sample]", "Station Road Area",
+                base.latitude + 0.0055, base.longitude + 0.0040,
+                0, 4.8, 128, "Sample Hours", "", "", false));
 
-        currentGyms.add(new GymModel("fb_2", "Power Zone Athletic Club", "Market Complex, College Road",
-                base.latitude - 0.0062, base.longitude + 0.0082,
-                0, 4.7, 94, "Open • 24 Hours", "+91 94234 88771", "https://powerzone.gym", false));
+        currentGyms.add(new GymModel("fb_2", "Power Zone Athletic Club [Sample]", "Market Complex, College Road",
+                base.latitude - 0.0048, base.longitude + 0.0062,
+                0, 4.6, 94, "Sample Hours", "", "", false));
 
-        currentGyms.add(new GymModel("fb_3", "FitLife Training Studio", "Near Stadium, Bypass Highway",
-                base.latitude + 0.0120, base.longitude - 0.0070,
-                0, 4.6, 76, "Open • Closes 9:30 PM", "+91 98810 55443", "https://fitlifeclub.in", false));
+        currentGyms.add(new GymModel("fb_3", "FitLife Training Studio [Sample]", "Near Stadium, Bypass Road",
+                base.latitude + 0.0080, base.longitude - 0.0055,
+                0, 4.5, 76, "Sample Hours", "", "", false));
 
-        currentGyms.add(new GymModel("fb_4", "MetroFlex Crossfit & Gym", "Civil Lines, High Street",
-                base.latitude - 0.0090, base.longitude - 0.0055,
-                0, 4.9, 150, "Open • Closes 11 PM", "+91 97654 33221", "https://metroflex.in", false));
+        currentGyms.add(new GymModel("fb_4", "MetroFlex Crossfit & Gym [Sample]", "Civil Lines High Street",
+                base.latitude - 0.0068, base.longitude - 0.0042,
+                0, 4.7, 110, "Sample Hours", "", "", false));
 
-        currentGyms.add(new GymModel("fb_5", "Gold's Pioneer Health Hub", "Shivaji Nagar Center",
-                base.latitude + 0.0150, base.longitude + 0.0090,
-                0, 4.5, 62, "Open • Closes 10 PM", "+91 99231 66778", "https://goldspioneer.fit", false));
-
-        // Calculate accurate distance for each gym relative to current GPS
         for (GymModel gym : currentGyms) {
             float dist = calculateDistanceKm(base.latitude, base.longitude, gym.getLatitude(), gym.getLongitude());
             gym.setDistanceKm(dist);
@@ -374,8 +547,8 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
                 Marker marker = mMap.addMarker(new MarkerOptions()
                         .position(gymPos)
                         .title(gym.getName())
-                        .snippet(gym.getFormattedDistance())
-                        .icon(BitmapDescriptorFactory.defaultMarker(80.0f)));
+                        .snippet((gym.isFromApi() ? "" : "[Fallback] ") + gym.getFormattedDistance())
+                        .icon(BitmapDescriptorFactory.defaultMarker(gym.isFromApi() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_AZURE)));
 
                 if (marker != null) {
                     markerGymMap.put(marker, gym);
@@ -389,6 +562,7 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
             TextView tvAddress = card.findViewById(R.id.tvCardGymAddress);
             TextView tvDistance = card.findViewById(R.id.tvCardGymDistance);
             TextView tvRating = card.findViewById(R.id.tvCardGymRating);
+            View llRatingBadge = card.findViewById(R.id.llCardGymRating);
             TextView tvStatus = card.findViewById(R.id.tvCardGymStatus);
             TextView tvSource = card.findViewById(R.id.tvCardGymSource);
             Button btDetails = card.findViewById(R.id.btCardViewDetails);
@@ -396,22 +570,48 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
             tvName.setText(gym.getName());
             tvAddress.setText(gym.getAddress());
             tvDistance.setText(gym.getFormattedDistance());
-            tvRating.setText(String.format(java.util.Locale.getDefault(), "%.1f", gym.getRating()));
-            tvStatus.setText(gym.getOpenStatus());
-            tvSource.setText(gym.isFromApi() ? "Places API" : "Verified Hub");
 
-            card.setOnClickListener(v -> {
-                if (mMap != null) {
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(gym.getLatitude(), gym.getLongitude()), 16f));
+            if (gym.hasRating()) {
+                if (llRatingBadge != null) llRatingBadge.setVisibility(View.VISIBLE);
+                tvRating.setText(gym.getFormattedRating());
+            } else {
+                if (llRatingBadge != null) llRatingBadge.setVisibility(View.GONE);
+            }
+
+            if (gym.getOpenStatus() != null && !gym.getOpenStatus().isEmpty()) {
+                tvStatus.setVisibility(View.VISIBLE);
+                tvStatus.setText(gym.getOpenStatus());
+            } else {
+                tvStatus.setVisibility(View.GONE);
+            }
+
+            if (gym.isFromApi()) {
+                tvSource.setText("Google Places API");
+                tvSource.setTextColor(getColor(R.color.purple_primary));
+            } else {
+                tvSource.setText("Offline Fallback Data");
+                tvSource.setTextColor(getColor(R.color.text_secondary));
+            }
+
+            card.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (mMap != null) {
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(gym.getLatitude(), gym.getLongitude()), 16f));
+                    }
                 }
             });
 
-            btDetails.setOnClickListener(v -> openGymDetails(gym));
+            btDetails.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    openGymDetails(gym);
+                }
+            });
 
             llGymListContainer.addView(card);
         }
 
-        // Adjust camera to first gym or user location
         if (mMap != null && !currentGyms.isEmpty()) {
             GymModel first = currentGyms.get(0);
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(first.getLatitude(), first.getLongitude()), 14f));
@@ -427,7 +627,7 @@ public class NearbyGymsActivity extends AppCompatActivity implements OnMapReadyC
         intent.putExtra("gym_phone", gym.getPhone());
         intent.putExtra("gym_lat", gym.getLatitude());
         intent.putExtra("gym_lng", gym.getLongitude());
-        intent.putExtra("gym_source", gym.isFromApi() ? "Google Places API" : "Verified Local Directory");
+        intent.putExtra("gym_source", gym.isFromApi() ? "Google Places API" : "Offline Fallback Directory");
         intent.putExtra("user_email", getIntent().getStringExtra("user_email"));
         startActivity(intent);
     }

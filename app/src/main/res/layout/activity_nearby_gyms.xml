@@ -19,7 +19,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Top Navigation Bar -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -73,7 +72,6 @@
                     android:contentDescription="Refresh" />
             </LinearLayout>
 
-            <!-- Search and Filter Bar -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -109,7 +107,6 @@
                     app:backgroundTint="@null" />
             </LinearLayout>
 
-            <!-- Map Container Card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
@@ -125,7 +122,6 @@
                     android:layout_height="match_parent" />
             </androidx.cardview.widget.CardView>
 
-            <!-- Live Status / Mode Notice Banner -->
             <LinearLayout
                 android:id="@+id/llSourceNotice"
                 android:layout_width="match_parent"
@@ -154,7 +150,6 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Loading Indicator -->
             <LinearLayout
                 android:id="@+id/llLoading"
                 android:layout_width="match_parent"
@@ -179,7 +174,6 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Results Header -->
             <TextView
                 android:id="@+id/tvGymsFoundCount"
                 android:layout_width="wrap_content"
@@ -191,14 +185,12 @@
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
-            <!-- Dynamic Gym List Container -->
             <LinearLayout
                 android:id="@+id/llGymListContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <!-- Empty State View -->
             <LinearLayout
                 android:id="@+id/llEmptyGyms"
                 android:layout_width="match_parent"

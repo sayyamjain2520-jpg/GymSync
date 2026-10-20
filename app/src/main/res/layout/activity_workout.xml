@@ -19,7 +19,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Top Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,7 +73,6 @@
                     android:contentDescription="New Plan" />
             </LinearLayout>
 
-            <!-- Daily Workout Progress Banner -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -121,7 +119,6 @@
                     android:progressBackgroundTint="@color/divider" />
             </LinearLayout>
 
-            <!-- Plan Selector Dropdown Header -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -140,7 +137,6 @@
                 android:popupBackground="@color/white"
                 android:spinnerMode="dropdown" />
 
-            <!-- Active Plan Details Card -->
             <LinearLayout
                 android:id="@+id/cardPlanDetails"
                 android:layout_width="match_parent"
@@ -186,7 +182,6 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 
-                <!-- Buttons Row: Add Exercise & Delete Plan -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -219,7 +214,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Exercise Checklist Section Title -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -238,14 +232,12 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
-            <!-- Dynamic Exercises Container -->
             <LinearLayout
                 android:id="@+id/llExercisesContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <!-- Empty Exercises Notice -->
             <TextView
                 android:id="@+id/tvEmptyExercises"
                 android:layout_width="match_parent"
@@ -259,7 +251,6 @@
                 android:textSize="13sp"
                 android:visibility="gone" />
 
-            <!-- Compatibility Button btGenerate -->
             <Button
                 android:id="@+id/btGenerate"
                 android:layout_width="match_parent"

@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">GymSync</string>
-    <string name="google_maps_key">YOUR_GOOGLE_MAPS_KEY_HERE</string>
 
     <string name="tagline">Your Smart Gym Companion</string>
     <string name="welcome_subtitle">Discover nearby gyms, build customized workout plans, and track fitness progress.</string>

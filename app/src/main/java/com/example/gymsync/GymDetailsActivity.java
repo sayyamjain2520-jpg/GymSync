@@ -87,7 +87,7 @@ public class GymDetailsActivity extends AppCompatActivity {
         gymPhone = intent.getStringExtra("gym_phone");
         gymSource = intent.getStringExtra("gym_source");
         userEmail = intent.getStringExtra("user_email");
-        gymRating = intent.getDoubleExtra("gym_rating", 4.8);
+        gymRating = intent.getDoubleExtra("gym_rating", -1.0);
         gymLat = intent.getDoubleExtra("gym_lat", 0.0);
         gymLng = intent.getDoubleExtra("gym_lng", 0.0);
 
@@ -95,57 +95,89 @@ public class GymDetailsActivity extends AppCompatActivity {
             userEmail = sessionManager.getUserEmail();
         }
 
-        if (gymName == null || gymName.isEmpty()) gymName = "Iron Paradise Fitness";
-        if (gymAddress == null || gymAddress.isEmpty()) gymAddress = "Main Road, Central District";
-        if (gymDistance == null || gymDistance.isEmpty()) gymDistance = "1.2 km away";
-        if (gymPhone == null || gymPhone.isEmpty()) gymPhone = "+91 98221 44556";
-        if (gymSource == null || gymSource.isEmpty()) gymSource = "Verified Hub";
+        if (gymName == null || gymName.isEmpty()) gymName = "Gym";
+        if (gymAddress == null || gymAddress.isEmpty()) gymAddress = "Location address not specified";
+        if (gymDistance == null || gymDistance.isEmpty()) gymDistance = "Nearby";
+        if (gymPhone == null) gymPhone = "";
+        if (gymSource == null || gymSource.isEmpty()) gymSource = "Google Places API";
 
         tvGymName.setText(gymName);
         tvAddress.setText(gymAddress);
         tvDistance.setText(gymDistance);
         if (tvRatingBadge != null) {
-            tvRatingBadge.setText(String.format(Locale.getDefault(), "★ %.1f", gymRating));
+            if (gymRating > 0.0) {
+                tvRatingBadge.setVisibility(View.VISIBLE);
+                tvRatingBadge.setText(String.format(Locale.getDefault(), "★ %.1f", gymRating));
+            } else {
+                tvRatingBadge.setText("Unrated");
+            }
         }
         if (tvDataSource != null) {
             tvDataSource.setText(gymSource);
         }
 
-        tvTimings.setText("Timings: 6:00 AM - 10:30 PM (Mon - Sat) • 7:00 AM - 1:00 PM (Sun)");
-        tvFacilities.setText("Facilities: Olympic Free Weights, Squat Racks, Treadmills, Steam & Shower, Locker Rooms, Certified Personal Trainers");
+        if (gymSource != null && (gymSource.contains("Fallback") || gymSource.contains("Sample"))) {
+            tvTimings.setText("Sample Hours: 6:00 AM - 10:00 PM (Mon - Sat) • 7:00 AM - 1:00 PM (Sun)");
+            tvFacilities.setText("Sample Facilities: Free weights, cardio equipment, locker rooms, trainers.");
+        } else {
+            tvTimings.setText("Timings: Check Google Maps or contact gym directly");
+            tvFacilities.setText("Facilities: Weights, fitness equipment, training facilities.");
+        }
     }
 
     private void setupListeners() {
-        btBack.setOnClickListener(v -> finish());
 
-        btDirections.setOnClickListener(v -> {
-            Uri gmmIntentUri;
-            if (gymLat != 0.0 && gymLng != 0.0) {
-                gmmIntentUri = Uri.parse("geo:" + gymLat + "," + gymLng + "?q=" + Uri.encode(gymName));
-            } else {
-                gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(gymName + " " + gymAddress));
-            }
-
-            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-            mapIntent.setPackage("com.google.android.apps.maps");
-
-            if (mapIntent.resolveActivity(getPackageManager()) != null) {
-                startActivity(mapIntent);
-            } else {
-                // Fallback to web maps
-                Intent webMapIntent = new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode(gymName + " " + gymAddress)));
-                startActivity(webMapIntent);
+        btBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
             }
         });
 
-        btCallGym.setOnClickListener(v -> {
-            Intent callIntent = new Intent(Intent.ACTION_DIAL);
-            callIntent.setData(Uri.parse("tel:" + gymPhone));
-            startActivity(callIntent);
+        btDirections.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri gmmIntentUri;
+                if (gymLat != 0.0 && gymLng != 0.0) {
+                    gmmIntentUri = Uri.parse("geo:" + gymLat + "," + gymLng + "?q=" + Uri.encode(gymName));
+                } else {
+                    gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(gymName + " " + gymAddress));
+                }
+
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                mapIntent.setPackage("com.google.android.apps.maps");
+
+                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(mapIntent);
+                } else {
+                    // Fallback to web maps
+                    Intent webMapIntent = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode(gymName + " " + gymAddress)));
+                    startActivity(webMapIntent);
+                }
+            }
         });
 
-        btBookVisit.setOnClickListener(v -> showBookingDialog());
+        btCallGym.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (gymPhone == null || gymPhone.trim().isEmpty()) {
+                    Toast.makeText(GymDetailsActivity.this, "Phone number not available for this gym", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent callIntent = new Intent(Intent.ACTION_DIAL);
+                callIntent.setData(Uri.parse("tel:" + gymPhone));
+                startActivity(callIntent);
+            }
+        });
+
+        btBookVisit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showBookingDialog();
+            }
+        });
+
     }
 
     private void showBookingDialog() {
@@ -164,14 +196,12 @@ public class GymDetailsActivity extends AppCompatActivity {
         final String[] selectedDate = {""};
         final String[] selectedTime = {""};
 
-        // Set default date to tomorrow
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, 1);
         SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         selectedDate[0] = sdfDate.format(calendar.getTime());
         tvBookingDate.setText(selectedDate[0] + " (Tap to change)");
 
-        // Set default time to 06:30 PM
         selectedTime[0] = "06:30 PM";
         tvBookingTime.setText("06:30 PM (Tap to change)");
 

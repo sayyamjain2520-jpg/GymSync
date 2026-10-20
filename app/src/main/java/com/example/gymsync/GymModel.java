@@ -48,6 +48,17 @@ public class GymModel implements Serializable {
     public String getWebsite() { return website; }
     public boolean isFromApi() { return isFromApi; }
 
+    public boolean hasRating() {
+        return rating > 0.0;
+    }
+
+    public String getFormattedRating() {
+        if (!hasRating()) {
+            return "Unrated";
+        }
+        return String.format(Locale.getDefault(), "%.1f", rating);
+    }
+
     public String getFormattedDistance() {
         if (distanceKm <= 0) {
             return "Nearby";
